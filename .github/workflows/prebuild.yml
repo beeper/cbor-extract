@@ -28,22 +28,41 @@ jobs:
           files: prebuild-darwin.tar
   build-test-win32:
     if: startsWith(github.ref, 'refs/tags/')
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, windows-11-arm]
+        include:
+          - os: windows-latest
+            node-version: 16
+          #https://nodejs.org/en/blog/announcements/v20-release-announce#official-support-for-arm64-windows
+          - os: windows-11-arm
+            node-version: 20
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: ${{ matrix.node-version }}
       - run: npm install
       - run: npm run prebuild-win32
       - run: tar --create --verbose --file=prebuild-win32.tar -C prebuilds .
+        if: runner.arch == 'X64'
+      - run: tar --create --verbose --file=prebuild-win32-arm.tar -C prebuilds .
+        if: runner.arch == 'ARM64'
         #if: startsWith(github.ref, 'refs/tags/')
       - name: Prebuild
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: runner.arch == 'X64' && startsWith(github.ref, 'refs/tags/')
         with:
           files: prebuild-win32.tar
+      - run: npm i -g node-gyp
+        if: runner.arch == 'ARM64'
+      - name: Prebuild
+        uses: softprops/action-gh-release@v1
+        if: runner.arch == 'ARM64' && startsWith(github.ref, 'refs/tags/')
+        with:
+          files: prebuild-win32-arm.tar
   build-centos-7:
     #if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
