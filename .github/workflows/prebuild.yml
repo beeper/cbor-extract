@@ -29,6 +29,9 @@ jobs:
   build-test-win32:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v3
       - name: Setup node
@@ -38,12 +41,20 @@ jobs:
       - run: npm install
       - run: npm run prebuild-win32
       - run: tar --create --verbose --file=prebuild-win32.tar -C prebuilds .
+        if: runner.arch == 'X64'
+      - run: tar --create --verbose --file=prebuild-win32-arm.tar -C prebuilds .
+        if: runner.arch == 'ARM64'
         #if: startsWith(github.ref, 'refs/tags/')
       - name: Prebuild
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: runner.arch == 'X64' && startsWith(github.ref, 'refs/tags/')
         with:
           files: prebuild-win32.tar
+      - name: Prebuild
+        uses: softprops/action-gh-release@v1
+        if: runner.arch == 'ARM64' && startsWith(github.ref, 'refs/tags/')
+        with:
+          files: prebuild-win32-arm.tar
   build-centos-7:
     #if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
