@@ -35,7 +35,8 @@ jobs:
         os: [windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v3
-      - run: corepack enable
+      # `corepack enable` just doesn't work on windows for some reason
+      - run: npm i -g yarn@latest
       - name: Setup node
         uses: actions/setup-node@v4
         with:
