@@ -41,7 +41,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: yarn
+          # this will attempt to use yarn 1
+          # cache: yarn
       - run: yarn
       - run: yarn run prebuild-win32
       - run: tar --create --verbose --file=prebuild-win32.tar -C prebuilds .
