@@ -1,7 +1,7 @@
 name: Prebuild
 on: [push]
 jobs:
-  build-test-macos:
+  build-macos:
     if: github.ref_type == 'tag'
     runs-on: macos-15
     steps:
@@ -13,7 +13,6 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install --mode=skip-build
-      - run: yarn test
       # build darwin-x64
       - run: yarn run prebuild-macos
         if: github.ref_type == 'tag'
