@@ -2,11 +2,11 @@
   "name": "cbor-extract",
   "author": "Kris Zyp",
   "version": "2.2.0",
-  "description": "Node addon for string extraction for cbor-x",
+  "description": "(Fork) Node addon for string extraction for cbor-x",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "http://github.com/kriszyp/cbor-extract"
+    "url": "http://github.com/beeper/cbor-extract"
   },
   "scripts": {
     "install": "node-gyp-build-optional-packages",
