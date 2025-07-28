@@ -35,14 +35,13 @@ jobs:
         os: [windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v3
-      # `corepack enable` just doesn't work on windows for some reason
-      - run: npm i -g yarn@latest
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          # this will attempt to use yarn 1
+          # this will always attempt to use yarn 1
           # cache: yarn
+      - run: corepack enable
       - run: yarn
       - run: yarn run prebuild-win32
       - run: tar --create --verbose --file=prebuild-win32.tar -C prebuilds .
