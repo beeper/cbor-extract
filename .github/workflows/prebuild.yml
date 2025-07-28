@@ -2,7 +2,7 @@ name: Prebuild
 on: [push]
 jobs:
   build-test-macos:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref_type == 'tag'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v3
@@ -14,21 +14,25 @@ jobs:
           cache: yarn
       - run: yarn install --mode=skip-build
       - run: yarn test
+      # build darwin-x64
       - run: yarn run prebuild-macos
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
+        env:
+          PREBUILD_ARCH: x64
+      # build darwin-arm64
       - run: yarn run prebuild-macos
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
         env:
           PREBUILD_ARCH: arm64
-      - run: tar --create --format ustar --verbose --file=prebuild-darwin.tar -C prebuilds .
-        if: startsWith(github.ref, 'refs/tags/')
+      - run: tar --create --format ustar --verbose --file=prebuild-darwin-x64-arm64.tar -C prebuilds .
+        if: github.ref_type == 'tag'
       - name: Prebuild
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
         with:
-          files: prebuild-darwin.tar
-  build-test-win32:
-    if: startsWith(github.ref, 'refs/tags/')
+          files: prebuild-darwin-x64-arm64.tar
+  build-windows:
+    if: github.ref_type == 'tag'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -46,30 +50,22 @@ jobs:
       # why we're building them)
       - run: yarn install --mode=skip-build
       - run: yarn run prebuild-win32
-      - run: tar --create --verbose --file=prebuild-win32.tar -C prebuilds .
+      - run: tar --create --verbose --file=prebuild-win32-x64.tar -C prebuilds .
         if: runner.arch == 'X64'
-      - run: tar --create --verbose --file=prebuild-win32-arm.tar -C prebuilds .
+      - run: tar --create --verbose --file=prebuild-win32-arm64.tar -C prebuilds .
         if: runner.arch == 'ARM64'
-        #if: startsWith(github.ref, 'refs/tags/')
+        #if: github.ref_type == 'tag'
       - name: Prebuild
         uses: softprops/action-gh-release@v1
-        if: runner.arch == 'X64' && startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
         with:
-          files: prebuild-win32.tar
-      - run: npm i -g node-gyp
-        if: runner.arch == 'ARM64'
-      - name: Prebuild
-        uses: softprops/action-gh-release@v1
-        if: runner.arch == 'ARM64' && startsWith(github.ref, 'refs/tags/')
-        with:
-          files: prebuild-win32-arm.tar
-  # TODO: re-add linux x86-64; prev. build was using centos 7 which is EOL
-  build-linux-arm:
-    if: startsWith(github.ref, 'refs/tags/')
+          files: ${{ runner.arch == 'X64' && 'prebuild-win32-x64.tar' || 'prebuild-win32-arm64.tar' }}
+  build-linux:
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
       - run: sudo apt-get update
-      - run: sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
+      - run: sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - run: ldd --version ldd
       - uses: actions/checkout@v3
       - run: corepack enable
@@ -79,21 +75,19 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install --mode=skip-build
+      # build linux-x64
       - run: yarn run prebuild-libc
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
+      # build linux-arm64
+      - run: yarn run prebuild-libc
+        if: github.ref_type == 'tag'
         env:
           PREBUILD_ARCH: arm64
           CC: aarch64-linux-gnu-gcc
           CXX: aarch64-linux-gnu-g++
-      - run: yarn run prebuild-libc
-        env:
-          PREBUILD_ARCH: arm
-          PREBUILD_ARMV: 7
-          CC: arm-linux-gnueabihf-gcc
-          CXX: arm-linux-gnueabihf-g++
-      - run: tar --create --verbose --file=prebuild-linux-arm.tar -C prebuilds .
+      - run: tar --create --verbose --file=prebuild-linux-x64-arm64.tar -C prebuilds .
       - name: Prebuild
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v1
         with:
-          files: prebuild-linux-arm.tar
+          files: prebuild-linux-x64-arm64.tar
